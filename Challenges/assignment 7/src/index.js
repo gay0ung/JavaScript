@@ -1,133 +1,159 @@
 const todoForm = document.querySelector('.js-todo-form'),
   input = todoForm.querySelector('input');
 
-const pendingUL = document.querySelector('.js-pending');
-const finishedUL = document.querySelector('.js-finished');
+const PendingL = document.querySelector('.js-pending');
+const finishedL = document.querySelector('.js-finished');
 
-// data
-// let pendingArr = [];
-// let finishArr = [];
-let todoList = [[], []];
+console.log(todoForm, input);
+console.log(PendingL, finishedL);
+let pendingTasks=[] ,
+    finishedTasks=[]
 
-console.log(todoList);
+// list생성
+function getTaskObj(text){
+  return {
+    id: String(Date.now()),
+    text :  text
+  }
+}
 
-function createTodo(txt){
+function savePendingTask(task){
+  pendingTasks.push(task);
+}
+
+// 완료한 할일 찾는 함수
+function findInFinished(taskId){
+  return finishedTasks.find(task => task.id === taskId)
+}
+
+// 할일 목록
+function findInPending(taskId){
+  return pendingTasks.find(task => task.id === taskId)
+}
+
+function removeFromPending(taskId){
+  pendingTasks = pendingTasks.filter(task => task.id !== taskId)
+}
+
+function removeFromFinished(taskId) {
+  finishedTasks = finishedTasks.filter(task => task.id !== taskId)
+}
+
+function addToFinished(task){
+  finishedTasks.push(task);
+}
+
+function addToPending(task) {
+  pendingTasks.push(task);
+}
+
+//  li생성 하는 함수
+function buildLI(task){
   const li = document.createElement("li");
   const span = document.createElement("span");
   const delBtn = document.createElement("button");
-  const reBtn = document.createElement("button");
-  const finiBtn = document.createElement("button");
 
-  const newId = todoList[0].length + 1;
-
+  span.innerText = task.text;
+  delBtn.className = "del"
   delBtn.innerText = "x";
-  reBtn.innerText = "↶";
-  finiBtn.innerText = "✔";
-  span.innerText = txt;
+
+  delBtn.addEventListener("click", (e)=>{
+    const li = e.target.parentNode;
+    li.parentNode.removeChild(li);
+    removeFromFinished(li.id);
+    removeFromPending(li.id);
+    saveState()
+  })
   
-  if (pendingUL){
-    pendingUL.appendChild(li);
-    li.appendChild(span);
-    li.appendChild(delBtn);
-    li.appendChild(finiBtn);
-  } else if (finishedUL) {
-    finishedUL.appendChild(li);
-    li.appendChild(span);
-    li.appendChild(delBtn);
-    li.appendChild(reBtn);
-  }
+  li.append(span, delBtn);
+  li.id = task.id;
 
-  li.id = newId;
-  delBtn.className = "del";
-  reBtn.className = "return";
-  finiBtn.className = "finish";
-
-  const todoObj = {
-    text: txt,
-    id: newId
-  }
-
-  todoList[0].push(todoObj);
-  
-  delBtn.addEventListener('click', eventList.deleteTodo);
-  reBtn.addEventListener('click', eventList.returnTodo);
-  finiBtn.addEventListener('click', eventList.finishedTodo);
-
-  saveToDoList();
+  return li;
 }
 
-const eventList = {
-  deleteTodo: function(e) {
-    e.preventDefault();
+// 완료
+function createPending(task){
+  const LI = buildLI(task);
+  const completeBtn = document.createElement("button");
+  completeBtn.innerText = "✔";
+  completeBtn.className = "finish"
 
-    const btnTarget = e.target.parentNode;
+  completeBtn.addEventListener("click", handleFinished);
 
-    pendingUL.removeChild(btnTarget);
+  LI.append(completeBtn);
+  PendingL.append(LI);
+}
+function handleFinished(e) {
+  const li = e.target.parentNode;
 
-    // console.log();
+  li.parentNode.removeChild(li);
+  const task = findInPending(li.id);
 
-    const cleanTodos = todoList[0].filter((toDo) => {
-      return toDo.id !== parseInt(btnTarget.id)
-    })
-
-    todoList[0] = cleanTodos
-
-    saveToDoList()
-  },
-  returnTodo: function (e) {
-    console.log(e);
-  },
-  finishedTodo: function(e){
-    const btnParent = e.target.parentNode.firstChild.innerText;
-    console.log(e.target.parentNode.id);
-
-    // if(btnParent){
-    //   const lis = pendingUL.childNodes
-    //   console.log(lis);
-    //   lis.slice(btnParent - 1, btnParent+1)
-    // }
-
-  }
+  removeFromPending(li.id);
+  addToFinished(task);
+  createFinished(task);
+  saveState()
 }
 
-function saveToDoList(){
-  localStorage.setItem("PENDING", JSON.stringify(todoList[0]));
-  localStorage.setItem("FINISHED", JSON.stringify(todoList[1]));
+// 다시 돌리기
+function createFinished(task) {
+  const LI = buildLI(task);
+  const returnBtn = document.createElement("button");
+  returnBtn.innerText = "↶";
+  returnBtn.className = "return"
+
+  returnBtn.addEventListener("click", handleReturn);
+
+  LI.append(returnBtn);
+  finishedL.append(LI);
 }
 
-function loadedToDoList(){
-  const loadedParsed = localStorage.getItem('PENDING')
-  const loadedFinished = localStorage.getItem('FINISHED')
+function handleReturn(e){
+  const li = e.target.parentNode;
 
-  if (loadedParsed !== null || loadedFinished !== null){
-    const parsedPending = JSON.parse(loadedParsed);
-    const parsedFinished = JSON.parse(loadedFinished);
+  li.parentNode.removeChild(li);
 
-    console.log(parsedPending);
+  const task = findInFinished(li.id);
 
-    let arr = [parsedPending, parsedFinished];
+  removeFromFinished(li.id);
+  addToPending(task);
+  createPending(task);
+  saveState();
+}
 
-    for(let i = 0; i < arr.length; i++){
-      arr[i].forEach((toDo) => {
-        createTodo(toDo.text)
-      })
-    }
-  
-  }
-  
+// localStarage options
+function saveState(){
+  localStorage.setItem("PENDING", JSON.stringify(pendingTasks));
+  localStorage.setItem("FINISHED", JSON.stringify(finishedTasks));
+}
+
+function loadState(){
+  pendingTasks = JSON.parse(localStorage.getItem('PENDING')) || []
+  finishedTasks = JSON.parse(localStorage.getItem('FINISHED')) || []
+}
+
+function restoreState(){
+  pendingTasks.forEach((task) => createPending(task));
+  finishedTasks.forEach((task) => createFinished(task));
 }
 
 function init(){
-  loadedToDoList();
+  todoForm.addEventListener("submit", (e)=> {
+    e.preventDefault();
 
-  todoForm.addEventListener('submit', e =>{
-    e.preventDefault()
-  
-    const inputValue = input.value;
-    
-    (inputValue == "") ? alert('할일을 입력해 주세요!') : createTodo(inputValue);
-   
+    const taskObj = getTaskObj(input.value);
+    if (input.value === ""){
+      alert("할일을 입력해 주세요!")
+    }
+    else{
+      createPending(taskObj)
+      savePendingTask(taskObj)
+    }
     input.value = ""
-  })
+    saveState()
+  });
+
+  loadState();
+  restoreState()
 }
 init()
