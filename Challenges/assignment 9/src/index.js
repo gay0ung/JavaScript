@@ -25,9 +25,7 @@ function addNumber(num) {
 function onlyNumber(NUM){
   if (NUM !== "=" && NUM !== "cal-symbol" ){
     number.innerHTML = number.innerHTML + NUM;
-
   } else if (NUM === "cal-symbol") {
-    
     number.innerHTML = ""
   }
 
@@ -54,12 +52,12 @@ function addEvent(BTN){
     }
   }
 }
+
 function numberHandler(e){
   let btnNum = e.target.innerText
   addNumber(btnNum);
   onlyNumber(btnNum);
 }
-
 
 function symbolHandler(e){
   const btnSymbol = e.target.innerText;
