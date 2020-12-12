@@ -63,7 +63,6 @@ function symbolHandler(e){
   const btnSymbol = e.target.innerText;
   const symParent = e.target.parentNode.className
   addNumber(btnSymbol);
-  console.log();
   onlyNumber(symParent);
 }
 
